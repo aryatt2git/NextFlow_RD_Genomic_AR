@@ -10,7 +10,7 @@ process BowTie2 {
         label 'process_medium'
     }
 
-    container 'biocontainers/bowtie2:v2.4.1_cv1'
+    container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 
     tag "$sample_id"
 
@@ -26,12 +26,12 @@ process BowTie2 {
 
     script:
     """
-    echo "Building Index Genome"
+    echo "Mapping Reads to Genome"
 
     # Generate BowTie2 index
-    bowtie2-build --threads 8 --large-index "${genomeFasta}" GRCh38_index
+    bowtie2-build --threads ${task.cpus} --large-index "${genomeFasta}" GRCh38_index
 
-    bowtie2 -p 8 -x GRCh38_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" -S "${sample_id}.sam"
+    bowtie2 -p ${task.cpus} -x GRCh38_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" -S "${sample_id}.sam"
 
     echo "Mapping complete."
     """

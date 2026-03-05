@@ -25,6 +25,7 @@ process FASTP {
         -I ${reads[1]} \
         -o ${sample_id}_FASTP/${sample_id}_1_fastp.fastq.gz \
         -O ${sample_id}_FASTP/${sample_id}_2.fastp.fastq.gz \
+        --thread ${task.cpus} \
         --html ${sample_id}_FASTP/${sample_id}_fastp.html \
         --json ${sample_id}_FASTP/${sample_id}_fastp.json
     echo "FASTP Complete"
