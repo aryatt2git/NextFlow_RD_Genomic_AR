@@ -22,7 +22,7 @@ process BowTie2 {
     path(genomeFasta)
 
     output:
-    tuple val(sample_id), file("${sample_id}.sam")
+    tuple val(sample_id), path("${sample_id}_bowtie2.sam")
 
     script:
     """
@@ -31,7 +31,7 @@ process BowTie2 {
     # Generate BowTie2 index
     bowtie2-build --threads ${task.cpus} --large-index "${genomeFasta}" GRCh38_index
 
-    bowtie2 -p ${task.cpus} -x GRCh38_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" -S "${sample_id}.sam"
+    bowtie2 -p ${task.cpus} -x GRCh38_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" -S "${sample_id}_bowtie2.sam"
 
     echo "Mapping complete."
     """
@@ -55,11 +55,11 @@ process samToBam {
     tuple val(sample_id), path(sam)
 
     output:
-    tuple val(sample_id), path("${sample_id}.bam")
+    tuple val(sample_id), path("${sample_id}_bowtie2.bam")
 
     script:
     """
-    samtools view -bS "${sample_id}.sam" > "${sample_id}.bam"
+    samtools view -bS "${sam}" > "${sample_id}_bowtie2.bam"
     """
 }
 

@@ -20,7 +20,7 @@ process DragMap {
     path(genomeFasta)
 
     output:
-    tuple val(sample_id), file("${sample_id}.bam")
+    tuple val(sample_id), file("${sample_id}_dragmap.bam")
 
     script:
     """
@@ -31,7 +31,7 @@ process DragMap {
     # Generate DragMap hash table
     dragen-os --build-hash-table true --num-threads 4 --ht-reference "${genomeFasta}" --output-directory dragen_index
 
-    dragen-os --num-threads 4 -r dragen_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}.bam"
+    dragen-os --num-threads 4 -r dragen_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}_dragmap.bam"
 
     echo "Mapping complete."
     """

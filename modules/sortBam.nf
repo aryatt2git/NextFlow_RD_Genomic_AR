@@ -9,10 +9,10 @@ process sortBam {
     tag "$bamFile"
 
     input:
-    tuple val(sample_id), file(bamFile)
+    tuple val(sample_id), path(bamFile)
 
     output:
-    tuple val(sample_id), file("${sample_id}_*_sorted.bam")
+    tuple val(sample_id), path("${sample_id}_*_sorted.bam")
 
     script:
     """
