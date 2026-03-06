@@ -15,7 +15,7 @@ process markDuplicates {
     tuple val(sample_id), file(bamFile)
 
     output:
-    tuple val(sample_id), file("${sample_id}_downsampled_*_dedup.bam")
+    tuple val(sample_id), file("${sample_id}_*_dedup.bam")
 
     script:
     """
