@@ -12,7 +12,7 @@ process combineGVCFs {
     path indexFiles
 
     output:
-    tuple val("${sample_ids.join('_')}"), file("*_combined.vcf"), file("*_combined.vcf.idx")
+    tuple val("${sample_ids.join('_')}"), path("*_combined.vcf"), path("*_combined.vcf.idx")
 
     script:
     def merged_sample_id = "${sample_ids.join('_')}"

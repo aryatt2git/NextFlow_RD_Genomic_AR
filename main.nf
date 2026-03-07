@@ -219,7 +219,9 @@ workflow {
             }
 
         // Combine GVCFs
-        final_vcf_ch = mergeGVCFs(all_gvcf_ch)
+        mergeGVCFs(all_gvcf_ch)
+
+        final_vcf_ch = mergeGVCFs.out.mergedGVCFs
 
     } else {
 

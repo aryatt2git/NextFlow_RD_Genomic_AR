@@ -23,7 +23,7 @@ process Strelka2 {
     path(genomeFai)
 
     output:
-    tuple val("$sample_id"), path("${sample_id}.g.vcf.gz"), path("${sample_id}.g.vcf.gz.tbi"), emit: gvcf
+    tuple val("$sample_id"), path("*.g.vcf.gz"), path("*.g.vcf.gz.tbi"), emit: gvcf
 
     script:
     """
@@ -35,8 +35,11 @@ process Strelka2 {
     # execution on a single local machine with 20 parallel jobs
     ./runWorkflow.py -m local -j ${task.cpus}
 
-    mv ./results/variants/variants.vcf.gz ${sample_id}.g.vcf.gz
-    mv ./results/variants/variants.vcf.gz.tbi ${sample_id}.g.vcf.gz.tbi
+    outputVCF="\$(basename ${bamFile} .bam)_strelka2.g.vcf.gz"
+    outputVCFidx="\$(basename ${bamFile} .bam)_strelka2.g.vcf.gz.tbi"
+
+    mv ./results/variants/variants.vcf.gz \${outputVCF}
+    mv ./results/variants/variants.vcf.gz.tbi \${outputVCFidx}
     """
 }
 
@@ -50,11 +53,17 @@ process mergeGVCFs {
     tuple val(sample_ids), path(gvcf_files), path(gvcf_index_files) // collected from all samples
 
     output:
-    tuple val("cohort"), path("cohort_joint.vcf.gz"), path("cohort_joint.vcf.gz.tbi")
+    tuple val("${sample_ids.join('_')}"), path("*_combined.vcf"), emit: mergedGVCFs
+    path("*_combined.vcf.gz")
+    path("*_combined.vcf.gz.tbi")
 
     script:
+    def merged_sample_id = "${sample_ids.join('_')}"
+    def gvcf_files_args = gvcf_files.collect { file -> "-V ${file}" }.join(' ')
     """
-    bcftools merge --force-samples --force-single -Oz -o cohort_joint.vcf.gz ${gvcf_files}
-    bcftools index -t cohort_joint.vcf.gz
+    bcftools merge --force-samples --force-single -Oz -o ${merged_sample_id}_combined.vcf.gz ${gvcf_files}
+    bcftools index -t ${merged_sample_id}_combined.vcf.gz
+
+    gunzip -k ${merged_sample_id}_combined.vcf.gz
     """
 }
