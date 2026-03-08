@@ -205,7 +205,7 @@ workflow {
         final_vcf_ch = filterDeepVariantVCF(jointCallDeepVariant.out.jointCalls)
 
     } else if (params.variant_caller == "strelka2") {
-        Strelka2(bqsr_ch, params.genome_file, params.genome_fai)
+        Strelka2(bqsr_ch, indexed_genome_ch.collect())
 
         gvcf_ch = Strelka2.out.gvcf.collect()
 

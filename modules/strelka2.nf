@@ -18,18 +18,23 @@ process Strelka2 {
     publishDir("$params.outdir/STRELKA2", mode: "copy")
 
     input:
-    tuple val(sample_id), file(bamFile), file(bamIndex)
-    path(genomeFasta)
-    path(genomeFai)
+    tuple val(sample_id), path(bamFile), path(bamIndex)
+    path(genomeFiles)
 
     output:
     tuple val("$sample_id"), path("*.g.vcf.gz"), path("*.g.vcf.gz.tbi"), emit: gvcf
 
     script:
     """
+    if [[ -n params.genome_file ]]; then
+        genomeFasta=\$(basename ${params.genome_file})
+    else
+        genomeFasta=\$(find -L . -name '*.fasta')
+    fi
+
     configureStrelkaGermlineWorkflow.py \
     --bam "${bamFile}" \
-    --referenceFasta "${genomeFasta}" \
+    --referenceFasta \${genomeFasta} \
     --runDir . \
     --exome
     # execution on a single local machine with 20 parallel jobs

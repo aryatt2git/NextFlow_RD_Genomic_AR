@@ -12,10 +12,10 @@ process indexBam {
     publishDir("$params.outdir/BAM", mode: "copy")
 
     input:
-    tuple val(sample_id), file(bamFile)
+    tuple val(sample_id), path(bamFile)
 
     output:
-    tuple val(sample_id), file("${bamFile}"), file("${bamFile}.bai")
+    tuple val(sample_id), path("${bamFile}"), path("${bamFile}.bai")
 
     script:
     """
