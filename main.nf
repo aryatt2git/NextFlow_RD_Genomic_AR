@@ -186,7 +186,7 @@ workflow {
 
     } else if (params.variant_caller == "deepvariant") {
         // Run DeepVariant on each sample
-        DeepVariant(bqsr_ch, params.genome_file, params.genome_fai)
+        DeepVariant(bqsr_ch, indexed_genome_ch.collect())
 
         // Collect all GVCF paths into one list
         gvcf_ch = DeepVariant.out.gvcf.collect()
@@ -194,8 +194,8 @@ workflow {
         all_gvcf_ch = gvcf_ch
             .collect { listOfTuples ->
                 def sample_ids = listOfTuples.collate(3).collect { it[0] }   // Collect sample IDs from every 3rd element
-                def vcf_files = listOfTuples.collate(3).collect { it[1] }    // Collect VCF files
-                return tuple(sample_ids, vcf_files)
+                def gvcf_files = listOfTuples.collate(3).collect { it[1] }    // Collect gVCF files
+                return tuple(sample_ids, gvcf_files)
             }
 
         // Run the joint caller once for the whole group
