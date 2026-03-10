@@ -4,12 +4,6 @@
  */
 process DragMap {
 
-    if (params.platform == 'local') {
-        label 'process_high'
-    } else if (params.platform == 'cloud') {
-        label 'process_high'
-    }
-
     container 'fauzul/dragmap:1.0'
 
     // Publish indexed files to the specified directory
@@ -17,21 +11,28 @@ process DragMap {
 
     input:
     tuple val(sample_id), path(trimmed_reads)
-    path(genomeFasta)
+    path(genomeFiles)
 
     output:
     tuple val(sample_id), file("${sample_id}_dragmap.bam")
+    path("dragen_index/*")
 
     script:
     """
-    echo "Building hash table of human genome fasta file"
+    echo "Mapping reads to reference using DragMap."
 
     mkdir -p dragen_index
 
-    # Generate DragMap hash table
-    dragen-os --build-hash-table true --num-threads 4 --ht-reference "${genomeFasta}" --output-directory dragen_index
+    if [[ -n params.genome_file ]]; then
+        genomeFasta=\$(basename ${params.genome_file})
+    else
+        genomeFasta=\$(find -L . -name '*.fasta')
+    fi
 
-    dragen-os --num-threads 4 -r dragen_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}_dragmap.bam"
+    # Generate DragMap hash table
+    dragen-os --build-hash-table true --num-threads ${task.cpus} --ht-reference \${genomeFasta} --output-directory dragen_index
+
+    dragen-os --num-threads ${task.cpus} -r dragen_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}_dragmap.bam"
 
     echo "Mapping complete."
     """
