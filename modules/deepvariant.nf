@@ -56,7 +56,7 @@ process jointCallDeepVariant {
 
     output:
     tuple val("${sample_ids}"), path("*_combined.vcf.gz"), path("*_combined.vcf.gz.tbi"), emit: jointCalls
-    path("${merged_sample_id}_combined.bcf")
+    path("*_combined.bcf")
 
     script:
     def merged_sample_id = "${sample_ids.join('_')}"
