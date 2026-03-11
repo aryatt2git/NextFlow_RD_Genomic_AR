@@ -128,7 +128,8 @@ workflow {
         sam_align_ch = BowTie2(read_pairs_ch, (params.genome_file))
         align_ch = samToBam(sam_align_ch)
     } else if (params.aligner == 'dragmap') {
-        align_ch = DragMap(read_pairs_ch, indexed_genome_ch.collect())
+        DragMap(read_pairs_ch, (params.dragen_index))
+        align_ch = DragMap.out.dragmap_bam
     }
 
     // Sort BAM files

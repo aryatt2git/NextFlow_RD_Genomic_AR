@@ -11,28 +11,16 @@ process DragMap {
 
     input:
     tuple val(sample_id), path(trimmed_reads)
-    path(genomeFiles)
+    path(dragen_index)
 
     output:
-    tuple val(sample_id), file("${sample_id}_dragmap.bam")
-    path("dragen_index/*")
+    tuple val(sample_id), file("${sample_id}_dragmap.bam"), emit: dragmap_bam
 
     script:
     """
     echo "Mapping reads to reference using DragMap."
 
-    mkdir -p dragen_index
-
-    if [[ -n params.genome_file ]]; then
-        genomeFasta=\$(basename ${params.genome_file})
-    else
-        genomeFasta=\$(find -L . -name '*.fasta')
-    fi
-
-    # Generate DragMap hash table
-    dragen-os --build-hash-table true --num-threads ${task.cpus} --ht-reference \${genomeFasta} --output-directory dragen_index
-
-    dragen-os --num-threads ${task.cpus} -r dragen_index -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}_dragmap.bam"
+    dragen-os --num-threads ${task.cpus} -r "${dragen_index}" -1 "${trimmed_reads[0]}" -2 "${trimmed_reads[1]}" > "${sample_id}_dragmap.bam"
 
     echo "Mapping complete."
     """
