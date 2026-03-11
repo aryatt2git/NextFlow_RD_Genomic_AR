@@ -242,31 +242,34 @@ workflow {
         final_vcf_ch = genotypeGVCFs(combined_gvcf_ch, indexed_genome_ch.collect())
     }
 
-    // Conditionally apply variant recalibration or filtering
-    if (params.variant_recalibration) {
-        // Define a map of VCF files to resource options
-        def resourceOptions = [
-            'Homo_sapiens_assembly38.known_indels': 'known=true,training=false,truth=false,prior=15.0',  // High-priority known indels, not used for training
-            'hapmap_3.3.hg38': 'known=false,training=false,truth=true,prior=15.0',  // Good for truth, not training
-            '1000G_omni2.5.hg38': 'known=false,training=true,truth=false,prior=12.0',  // Omni SNPs, used for training
-            '1000G_phase1.snps.high_confidence.hg38': 'known=true,training=true,truth=true,prior=10.0',  // High confidence SNPs, both for training and truth
-            'Homo_sapiens_assembly38.dbsnp138': 'known=true,training=false,truth=false,prior=2.0',  // dbSNP, known but not for training
-            'Mills_and_1000G_gold_standard.indels.hg38': 'known=true,training=true,truth=true,prior=12.0'  // Gold standard indels, good for truth (indels)
-        ]
+    if (params.variant_caller != "deepvariant") {
 
-        // Generate --resource arguments
-        knownSitesArgs_ch = Channel
-            .fromPath(params.qsrVcfs)
-            .filter { file -> file.getName().endsWith('.vcf.gz') || file.getName().endsWith('.vcf') }
-            .map { file ->
-                def baseName = file.getName().replaceAll(/\.vcf(\.gz)?$/, '') // Remove .vcf.gz or .vcf
-                def resourceArgs = resourceOptions.get(baseName) ?: "" // Get attributes from resourceOptions
-                return "--resource:${baseName},${resourceArgs} ${file.getName()}" // Only the filename, no full path
-            }
-            .collect()
-        filtered_vcf_ch = variantRecalibrator(final_vcf_ch, knownSitesArgs_ch, indexed_genome_ch.collect(), qsrc_vcf_ch.collect())
-    } else {
-        filtered_vcf_ch = filterVCF(final_vcf_ch, indexed_genome_ch.collect())
+        // Conditionally apply variant recalibration or filtering
+        if (params.variant_recalibration) {
+            // Define a map of VCF files to resource options
+            def resourceOptions = [
+                'Homo_sapiens_assembly38.known_indels': 'known=true,training=false,truth=false,prior=15.0',  // High-priority known indels, not used for training
+                'hapmap_3.3.hg38': 'known=false,training=false,truth=true,prior=15.0',  // Good for truth, not training
+                '1000G_omni2.5.hg38': 'known=false,training=true,truth=false,prior=12.0',  // Omni SNPs, used for training
+                '1000G_phase1.snps.high_confidence.hg38': 'known=true,training=true,truth=true,prior=10.0',  // High confidence SNPs, both for training and truth
+                'Homo_sapiens_assembly38.dbsnp138': 'known=true,training=false,truth=false,prior=2.0',  // dbSNP, known but not for training
+                'Mills_and_1000G_gold_standard.indels.hg38': 'known=true,training=true,truth=true,prior=12.0'  // Gold standard indels, good for truth (indels)
+            ]
+
+            // Generate --resource arguments
+            knownSitesArgs_ch = Channel
+                .fromPath(params.qsrVcfs)
+                .filter { file -> file.getName().endsWith('.vcf.gz') || file.getName().endsWith('.vcf') }
+                .map { file ->
+                    def baseName = file.getName().replaceAll(/\.vcf(\.gz)?$/, '') // Remove .vcf.gz or .vcf
+                    def resourceArgs = resourceOptions.get(baseName) ?: "" // Get attributes from resourceOptions
+                    return "--resource:${baseName},${resourceArgs} ${file.getName()}" // Only the filename, no full path
+                }
+                .collect()
+            filtered_vcf_ch = variantRecalibrator(final_vcf_ch, knownSitesArgs_ch, indexed_genome_ch.collect(), qsrc_vcf_ch.collect())
+        } else {
+            filtered_vcf_ch = filterVCF(final_vcf_ch, indexed_genome_ch.collect())
+        }
     }
 
     // Conditionally run identityAnalysis if identity_analysis is true
