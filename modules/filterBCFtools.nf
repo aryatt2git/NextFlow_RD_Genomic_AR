@@ -1,15 +1,15 @@
-process filterDeepVariantVCF {
+process filterBCF {
     label 'process_low'
     container 'staphb/bcftools:1.23'
 
     tag "$sample_id"
-    publishDir("$params.outdir/DEEPVARIANT/VCF_FILTERED", mode: "copy")
+    publishDir("$params.outdir/VCF", mode: "copy")
 
     input:
-    tuple val(sample_id), path(vcf), path(tbi)
+    tuple val(sample_id), path(vcf)
 
     output:
-    tuple val("cohort"), path("dv_cohort_filtered.vcf.gz"), path("dv_cohort_filtered.vcf.gz.tbi")
+    tuple val("$sample_id"), path("bcf_filtered.vcf.gz"), path("bcf_filtered.vcf.gz.tbi")
 
     script:
     // Define thresholds based on the 'degraded_dna' flag
@@ -30,10 +30,10 @@ process filterDeepVariantVCF {
         -s "LowConf" \\
         -m + \\
         -O z \\
-        -o dv_cohort_filtered.vcf.gz \\
+        -o bcf_filtered.vcf.gz \\
         ${vcf}
 
     # Index the filtered output
-    bcftools index -t dv_cohort_filtered.vcf.gz
+    bcftools index -t bcf_filtered.vcf.gz
     """
 }

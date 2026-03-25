@@ -33,9 +33,11 @@ if (params.fastqc) {
 if (params.fastp) {
     include { FASTP } from './modules/fastp'
 }
+include { FASTQC_BAM } from './modules/fastqc_BAMS'
 include { sortBam } from './modules/sortBam'
 include { markDuplicates } from './modules/markDuplicates'
 include { indexBam } from './modules/indexBam'
+include { filterBCF } from './modules/filterBCFtools'
 if (params.bqsr) {
     include { baseRecalibrator } from './modules/BQSR'
 }
@@ -132,6 +134,9 @@ workflow {
         align_ch = DragMap.out.dragmap_bam
     }
 
+    // Check the quality of the BAM
+    FASTQC_BAM(align_ch)
+
     // Sort BAM files
     sort_ch = sortBam(align_ch)
 
@@ -203,7 +208,7 @@ workflow {
         jointCallDeepVariant(all_gvcf_ch)
 
         // Pass the output to your filterVCF (the bcftools version we discussed)
-        final_vcf_ch = filterDeepVariantVCF(jointCallDeepVariant.out.jointCalls)
+        final_final_vcf_ch = filterDeepVariantVCF(jointCallDeepVariant.out.jointCalls)
 
     } else if (params.variant_caller == "strelka2") {
         Strelka2(bqsr_ch, indexed_genome_ch.collect())
@@ -267,10 +272,24 @@ workflow {
                 }
                 .collect()
             filtered_vcf_ch = variantRecalibrator(final_vcf_ch, knownSitesArgs_ch, indexed_genome_ch.collect(), qsrc_vcf_ch.collect())
+            final_final_vcf_ch = filterBCF(filtered_vcf_ch)
         } else {
             filtered_vcf_ch = filterVCF(final_vcf_ch, indexed_genome_ch.collect())
+            final_final_vcf_ch = filterBCF(filtered_vcf_ch)
         }
     }
+
+    bench_bed_ch = Channel.fromPath(params.benchmark_bed)
+    query_bed_ch = Channel.fromPath(params.query_bed)
+
+    happy(
+        final_final_vcf_ch,
+        (params.benchmark_vcf),
+        (params.benchmark_index),
+        bench_bed_ch.collect(),
+        query_bed_ch.collect(),
+        indexed_genome_ch.collect() // Assuming this passes the fasta and fai
+    )
 
     // Conditionally run identityAnalysis if identity_analysis is true
     if (params.identity_analysis) {
