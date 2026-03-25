@@ -38,6 +38,7 @@ include { sortBam } from './modules/sortBam'
 include { markDuplicates } from './modules/markDuplicates'
 include { indexBam } from './modules/indexBam'
 include { filterBCF } from './modules/filterBCFtools'
+include { happy } from './modules/happy'
 if (params.bqsr) {
     include { baseRecalibrator } from './modules/BQSR'
 }
