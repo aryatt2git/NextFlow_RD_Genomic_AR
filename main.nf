@@ -289,8 +289,7 @@ workflow {
         (params.benchmark_index),
         bench_bed_ch.collect(),
         query_bed_ch.collect(),
-        (params.genome_file),
-        indexed_genome_ch.collect()// Assuming this passes the fasta and fai
+        indexed_genome_ch.collect() // Assuming this passes the fasta and fai
     )
 
     // Conditionally run identityAnalysis if identity_analysis is true
