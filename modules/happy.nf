@@ -26,7 +26,7 @@ process happy {
     tuple val(sample_id), path("${sample_id}.*")
 
     script:
-    def ref_fasta = genome_stuff.find { it.name =~ /fasta$/ }
+    def ref_fasta = genomeFasta.find { it.name =~ /fasta$/ }
 
     """
     echo "Comparing VCFs with benchmark"
