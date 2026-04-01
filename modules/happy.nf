@@ -20,6 +20,7 @@ process happy {
     path(benchmarkBED)
     path(queryBED)
     path(genomeFasta)
+    path(genome_idx)
 
     output:
     tuple val(sample_id), path("./*")
