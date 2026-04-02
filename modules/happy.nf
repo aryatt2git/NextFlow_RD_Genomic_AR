@@ -6,7 +6,7 @@ process happy {
         label 'process_medium'
     }
 
-    container 'pkrusche/hap.py:v0.3.9'
+    container 'jmcdani20/hap.py:v0.3.12'
 
     tag "$sample_id"
 
@@ -15,27 +15,26 @@ process happy {
 
     input:
     tuple val(sample_id), path(vcf), path(vcf_idx)
-    path(benchmarkVCF)
-    path(benchmark_idx)
-    path(benchmarkBED)
-    path(queryBED)
-    path(genomeFasta)
+    path benchmarkVCF
+    path benchmark_idx
+    path benchmarkBED
+    path queryBED
+    path genomeFasta
+    path genomeFasta_idx
 
     output:
     tuple val(sample_id), path("${sample_id}.summary.csv")
     tuple val(sample_id), path("${sample_id}.*")
 
     script:
-    def ref_fasta = genomeFasta.find { it.name =~ /fasta$/ }
-
     """
     echo "Comparing VCFs with benchmark"
 
     # Generate BowTie2 index
-    hap.py ${benchmarkVCF} ${vcf} \
+    /opt/hap.py/bin/hap.py ${benchmarkVCF} ${vcf} \
         -f ${benchmarkBED} \
         -T ${queryBED} \
-        -r ${ref_fasta} \
+        -r ${genomeFasta} \
         -o $sample_id \
         --threads ${task.cpus} \
         --engine vcfeval

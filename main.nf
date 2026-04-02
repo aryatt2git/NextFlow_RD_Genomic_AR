@@ -280,16 +280,17 @@ workflow {
         }
     }
 
-    bench_bed_ch = Channel.fromPath(params.benchmark_bed)
-    query_bed_ch = Channel.fromPath(params.query_bed)
+    // bench_bed_ch = Channel.fromPath(params.benchmark_bed)
+    // query_bed_ch = Channel.fromPath(params.query_bed)
 
     happy(
         final_final_vcf_ch,
-        (params.benchmark_vcf),
-        (params.benchmark_index),
-        bench_bed_ch.collect(),
-        query_bed_ch.collect(),
-        indexed_genome_ch.collect() // Assuming this passes the fasta and fai
+        file(params.benchmark_vcf),
+        file(params.benchmark_index),
+        file(params.benchmark_bed),
+        file(params.query_bed),
+        file(params.genome_file),
+        file(params.genome_fai) // Assuming this passes the fasta and fai
     )
 
     // Conditionally run identityAnalysis if identity_analysis is true
