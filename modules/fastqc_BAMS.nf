@@ -11,19 +11,19 @@ process FASTQC_BAM {
     tag "$sample_id"
 
     // Specify the output directory for the FASTQC results
-    publishDir("$params.outdir/FASTQC_BAM", mode: "copy")
+    publishDir("$params.outdir/MULTIQC/fastQC", mode: "copy")
 
     input:
-    tuple val(sample_id), path(bamFile)
+    tuple val(sample_id), path(bamFile), path(bai)
 
     output:
-    path "fastqc_BAMS_${sample_id}_logs/*"
+    tuple val(sample_id), path("*.html"), emit: html
+    tuple val(sample_id), path("*.zip"),  emit: zip
 
     script:
     """
     echo "Running FASTQC"
-    mkdir -p fastqc_BAMS_${sample_id}_logs
-    fastqc -t ${task.cpus} -o fastqc_BAMS_${sample_id}_logs ${bamFile}
+    fastqc -t ${task.cpus} ${bamFile} -o .
     echo "FASTQC Complete"
     """
 }

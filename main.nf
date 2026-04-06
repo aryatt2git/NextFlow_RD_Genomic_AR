@@ -33,10 +33,13 @@ if (params.fastqc) {
 if (params.fastp) {
     include { FASTP } from './modules/fastp'
 }
-include { FASTQC_BAM } from './modules/fastqc_BAMS'
 include { sortBam } from './modules/sortBam'
 include { markDuplicates } from './modules/markDuplicates'
 include { indexBam } from './modules/indexBam'
+include { SAMTOOLS_STATS } from './modules/samtools_stats'
+include { FASTQC_BAM } from './modules/fastqc_BAMS'
+include { QUALIMAP } from './modules/qualimap'
+include { MULTIQC } from './modules/multiqc'
 include { filterBCF } from './modules/filterBCFtools'
 include { happy } from './modules/happy'
 if (params.bqsr) {
@@ -59,6 +62,8 @@ if (params.aligner == 'bwa-mem') {
 } else if (params.aligner == 'bowtie2') {
     include { BowTie2 } from './modules/BowTie2'
     include { samToBam } from './modules/BowTie2'
+} else if (params.aligner == 'bwa-mem2') {
+    include { BWA_MEM2 } from './modules/bwa_mem2'
 } else if (params.aligner == 'dragmap') {
     include { DragMap } from './modules/DragMap'
 } else {
@@ -130,13 +135,13 @@ workflow {
     } else if (params.aligner == 'bowtie2') {
         sam_align_ch = BowTie2(read_pairs_ch, (params.genome_file))
         align_ch = samToBam(sam_align_ch)
+    } else if (params.aligner == 'bwa-mem2') {
+        bwa_mem_2_indexed_genome_ch = Channel.fromPath(params.bwa_mem_2_index_files).collect()
+        align_ch = BWA_MEM2(read_pairs_ch, (params.bwa_mem_2_genome_file), bwa_mem_2_indexed_genome_ch)
     } else if (params.aligner == 'dragmap') {
         DragMap(read_pairs_ch, (params.dragen_index))
         align_ch = DragMap.out.dragmap_bam
     }
-
-    // Check the quality of the BAM
-    FASTQC_BAM(align_ch)
 
     // Sort BAM files
     sort_ch = sortBam(align_ch)
@@ -146,6 +151,21 @@ workflow {
 
     // Index the BAM files and collect the output channel
     indexed_bam_ch = indexBam(mark_ch)
+
+    // QC the BAM files using samtools, fastaQC and Qualimap
+    SAMTOOLS_STATS(indexed_bam_ch)
+    FASTQC_BAM(indexed_bam_ch)
+    QUALIMAP(indexed_bam_ch, (params.query_bed))
+
+    // Gather the outputs for MULTIQC input and execute MULTIQC
+    multiqc_input = Channel.empty()
+        .mix(SAMTOOLS_STATS.out.flagstat.map { it[1] })
+        .mix(SAMTOOLS_STATS.out.stats.map    { it[1] })
+        .mix(FASTQC_BAM.out.zip.map          { it[1] })
+        .mix(QUALIMAP.out.results.map        { it[1] })
+        .collect()
+
+    MULTIQC(multiqc_input)
 
     // Conditionally run mapDamage if degraded_dna parameter is set
     if (params.degraded_dna) {
