@@ -1,7 +1,7 @@
 process MULTIQC {
     label 'process_low'
 
-    container 'multiqc/multiqc:pdf-dev'
+    container 'quay.io/biocontainers/multiqc:1.33--pyhdfd78af_0'
 
     publishDir("$params.outdir/MULTIQC/multiQC", mode: "copy")
 
